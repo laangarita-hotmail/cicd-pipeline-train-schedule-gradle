@@ -1,0 +1,66 @@
+/*
+ * Learn how to create Gradle builds at https://guides.gradle.org/creating-new-gradle-builds/
+ */
+
+ /* This project is written in nodeJS and so we're going to use
+ * a Gradle plugin for nodeJS which handles many of the aspects for
+ * building nodeJS nodes ; defined here */
+
+plugins {
+  id "com.moowork.node" version "1.2.0"
+}
+
+/* Configure the plugin with a node block */
+
+node {
+/* Download and install nodejs and npm for this project */
+  download = true
+}
+
+repositories.whenObjectAdded {
+    if (it instanceof IvyArtifactRepository) {
+        metadataSources {
+            artifact()
+        }
+    }
+}
+
+task build
+
+/* add task for zipping up your codeand dependencies into a storable and deployable 
+* artifact */
+/* from = root project directory; include * = all files in project's top level directory */
+task zip(type: Zip) {
+  from ('.') {
+    include "*"
+    include "bin/**"
+    include "node_modules/**"
+    include "public/**"
+    include "routes/**"
+    include "views/**"
+  }
+/* place zip file in the projects dist directory which is auto-created at the top 
+* level directory under the project's root directory */
+  destinationDir(file("dist"))
+
+/* define the name included in your zip file name */
+  baseName "trainSchedule"
+}
+
+/* Set up dependencies for your zip task */
+build.dependsOn zip
+zip.dependsOn npm_build
+
+
+/* set up your build to use the npm_build task provided by the node plugin */
+build.dependsOn npm_build
+
+/* add dependency for npm install task (from plugin) to occur for library dependencies 
+* of your nodeJS application; this task is included in the node plugin we're using */
+npm_build.dependsOn npmInstall 
+
+/* add dependency to ensure automated tests are run and that npm install has occurred;
+* sanity tests to make sure the application responds as intended */
+npm_build.dependsOn npm_test
+npm_test.dependsOn npmInstall
+
